@@ -19,7 +19,25 @@ export default function SignIn() {
 
   useEffect(() => {
     if (walletAddress) {
-      router.push('/dashboard')
+      // Check if user exists with this wallet address
+      const checkUser = async () => {
+        const { data: user } = await supabase
+          .from('users')
+          .select('*')
+          .eq('wallet_address', walletAddress)
+          .single()
+
+        if (user) {
+          if (!user.is_aadhar_verified) {
+            router.push('/aadhar-verification')
+          } else {
+            router.push('/dashboard')
+          }
+        } else {
+          router.push('/register')
+        }
+      }
+      checkUser()
     }
   }, [walletAddress, router])
 
@@ -33,6 +51,7 @@ export default function SignIn() {
       if (!walletAddress) {
         try {
           await connectWallet()
+          return // The useEffect will handle the redirection
         } catch (err: any) {
           setError('Failed to connect wallet: ' + (err.message || 'Please install MetaMask'))
           return

@@ -8,8 +8,9 @@ export function middleware(request: NextRequest) {
   const publicPaths = ['/', '/signIn', '/register']
   const isPublicPath = publicPaths.includes(pathname)
 
-  // Get the wallet address from the request headers
-  const walletAddress = request.headers.get('x-wallet-address')
+  // Get the wallet address from the request headers or cookies
+  const walletAddress = request.headers.get('x-wallet-address') || 
+                       request.cookies.get('wallet_address')?.value
 
   // Redirect logic
   if (!walletAddress && !isPublicPath) {

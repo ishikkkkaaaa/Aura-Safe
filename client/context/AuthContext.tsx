@@ -28,7 +28,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const provider = new ethers.BrowserProvider(window.ethereum)
         const accounts = await provider.listAccounts()
         if (accounts.length > 0) {
-          setWalletAddress(accounts[0].address)
+          const address = accounts[0].address
+          setWalletAddress(address)
+          // Set wallet address in headers and localStorage
+          if (typeof window !== 'undefined') {
+            window.localStorage.setItem('wallet_address', address)
+          }
         }
       }
     } catch (error) {
@@ -46,13 +51,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const provider = new ethers.BrowserProvider(window.ethereum)
       const accounts = await provider.send('eth_requestAccounts', [])
-      setWalletAddress(accounts[0])
+      const address = accounts[0]
+      setWalletAddress(address)
+
+      // Set wallet address in headers for all future requests
+      if (typeof window !== 'undefined') {
+        const headers = new Headers()
+        headers.set('x-wallet-address', address)
+        window.localStorage.setItem('wallet_address', address)
+      }
 
       // Check if user exists in Supabase
       const { data: user } = await supabase
         .from('users')
         .select('*')
-        .eq('wallet_address', accounts[0])
+        .eq('wallet_address', address)
         .single()
 
       if (!user) {
@@ -70,6 +83,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setWalletAddress(null)
       // Clear any stored session data
       await supabase.auth.signOut()
+      // Clear wallet address from headers and localStorage
+      if (typeof window !== 'undefined') {
+        window.localStorage.removeItem('wallet_address')
+      }
     } catch (error) {
       console.error('Error disconnecting wallet:', error)
       throw error
