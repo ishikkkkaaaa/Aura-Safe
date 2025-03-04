@@ -29,7 +29,17 @@ export default function SignIn() {
     setLoading(true)
 
     try {
-      // First check if user exists with this email
+      // First connect wallet if not already connected
+      if (!walletAddress) {
+        try {
+          await connectWallet()
+        } catch (err: any) {
+          setError('Failed to connect wallet: ' + (err.message || 'Please install MetaMask'))
+          return
+        }
+      }
+
+      // Then check if user exists with this email
       const { data: user, error: userError } = await supabase
         .from('users')
         .select('*')
@@ -45,11 +55,6 @@ export default function SignIn() {
       if (user.password !== password) {
         setError('Invalid password')
         return
-      }
-
-      // If password matches, connect wallet
-      if (!walletAddress) {
-        await connectWallet()
       }
 
       // Check if Aadhar is verified
